@@ -24,6 +24,39 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSuccess }) => {
     description: '',
     photo: ''
   });
+  const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Geolocation not supported",
+        description: "Your browser does not support GPS location.",
+        variant: "destructive"
+      });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        setGpsCoords({ lat, lng });
+        setFormData(prev => ({
+          ...prev,
+          location: `${prev.location ? prev.location + ' | ' : ''}GPS: ${lat}, ${lng}`
+        }));
+        toast({
+          title: "Location fetched!",
+          description: `Latitude: ${lat}, Longitude: ${lng}`,
+        });
+      },
+      (error) => {
+        toast({
+          title: "Unable to fetch location",
+          description: error.message,
+          variant: "destructive"
+        });
+      }
+    );
+  };
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -129,14 +162,24 @@ const ComplaintForm: React.FC<ComplaintFormProps> = ({ onSuccess }) => {
                   <MapPin className="h-4 w-4 text-eco-green" />
                   Location
                 </Label>
-                <Input
-                  id="location"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="e.g., Main Street, Block A"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="location"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="e.g., Main Street, Block A"
+                  />
+                  <Button type="button" variant="outline" onClick={handleGetLocation}>
+                    Use My Location
+                  </Button>
+                </div>
+                {gpsCoords && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    GPS: {gpsCoords.lat}, {gpsCoords.lng}
+                  </p>
+                )}
               </div>
             </div>
 
